@@ -1,0 +1,562 @@
+{
+  "byUser": {
+    "michael": [
+      {
+        "id": "4g41c70x",
+        "title": "BillMC: Get Website Live + Training",
+        "notes": "",
+        "category": "",
+        "priority": "medium",
+        "durationMin": 30,
+        "due": null,
+        "reminder": null,
+        "batchable": false,
+        "status": "pending",
+        "createdAt": "2025-08-19T05:43:51.816Z",
+        "scheduled": [
+          {
+            "start": "2025-08-20T00:00:00.000Z",
+            "end": "2025-08-20T00:30:00.000Z"
+          },
+          {
+            "start": "2025-08-25T04:00:00.000Z",
+            "end": "2025-08-25T04:30:00.000Z"
+          }
+        ],
+        "owner": "michael"
+      },
+      {
+        "id": "pspc7237",
+        "title": "Morr Movement: Kenkoo Setup",
+        "notes": "",
+        "category": "",
+        "priority": "high",
+        "durationMin": 45,
+        "due": null,
+        "reminder": null,
+        "batchable": false,
+        "status": "pending",
+        "createdAt": "2025-08-19T05:43:51.818Z",
+        "scheduled": [
+          {
+            "start": "2025-08-19T23:00:00.000Z",
+            "end": "2025-08-19T23:30:00.000Z"
+          },
+          {
+            "start": "2025-08-19T23:30:00.000Z",
+            "end": "2025-08-20T00:00:00.000Z"
+          },
+          {
+            "start": "2025-08-24T23:00:00.000Z",
+            "end": "2025-08-24T23:30:00.000Z"
+          },
+          {
+            "start": "2025-08-24T23:30:00.000Z",
+            "end": "2025-08-25T00:00:00.000Z"
+          }
+        ],
+        "owner": "michael"
+      },
+      {
+        "id": "hn03d9c0",
+        "title": "RTB: Website Design Refresh",
+        "notes": "",
+        "category": "",
+        "priority": "medium",
+        "durationMin": 30,
+        "due": null,
+        "reminder": null,
+        "batchable": false,
+        "status": "pending",
+        "createdAt": "2025-08-19T05:43:51.819Z",
+        "scheduled": [
+          {
+            "start": "2025-08-20T01:30:00.000Z",
+            "end": "2025-08-20T02:00:00.000Z"
+          },
+          {
+            "start": "2025-08-25T04:30:00.000Z",
+            "end": "2025-08-25T05:00:00.000Z"
+          }
+        ],
+        "owner": "michael"
+      },
+      {
+        "id": "33t6t4dy",
+        "title": "Alpha Website Compliance – secondary pages",
+        "notes": "",
+        "category": "",
+        "priority": "high",
+        "durationMin": 30,
+        "due": null,
+        "reminder": null,
+        "batchable": false,
+        "status": "waiting",
+        "createdAt": "2025-08-19T05:43:51.820Z",
+        "scheduled": [
+          {
+            "start": "2025-08-20T01:00:00.000Z",
+            "end": "2025-08-20T01:30:00.000Z"
+          }
+        ],
+        "waitingReason": "Waiting for Ashton to get back to me",
+        "owner": "michael"
+      },
+      {
+        "id": "hdh73awy",
+        "title": "Psychological Assessment",
+        "notes": "",
+        "category": "",
+        "priority": "medium",
+        "durationMin": 30,
+        "due": null,
+        "reminder": null,
+        "batchable": false,
+        "status": "pending",
+        "createdAt": "2025-08-19T05:43:51.821Z",
+        "scheduled": [
+          {
+            "start": "2025-08-21T23:00:00.000Z",
+            "end": "2025-08-21T23:30:00.000Z"
+          },
+          {
+            "start": "2025-08-25T23:00:00.000Z",
+            "end": "2025-08-25T23:30:00.000Z"
+          }
+        ],
+        "owner": "michael"
+      },
+      {
+        "id": "7go973mc",
+        "title": "Review",
+        "notes": "",
+        "category": "",
+        "priority": "medium",
+        "durationMin": 30,
+        "due": null,
+        "reminder": null,
+        "batchable": false,
+        "status": "completed",
+        "createdAt": "2025-08-19T05:43:51.821Z",
+        "scheduled": [
+          {
+            "start": "2025-08-19T00:30:00.000Z",
+            "end": "2025-08-19T01:00:00.000Z"
+          }
+        ],
+        "waitingReason": "Waiting on Marlon",
+        "owner": "michael"
+      },
+      {
+        "id": "x1spln7u",
+        "title": "EP: Google Ads Campaign Optimisation",
+        "notes": "",
+        "category": "",
+        "priority": "medium",
+        "durationMin": 30,
+        "due": null,
+        "reminder": null,
+        "batchable": false,
+        "status": "pending",
+        "createdAt": "2025-08-19T05:43:51.824Z",
+        "scheduled": [
+          {
+            "start": "2025-08-21T23:30:00.000Z",
+            "end": "2025-08-22T00:00:00.000Z"
+          },
+          {
+            "start": "2025-08-25T23:30:00.000Z",
+            "end": "2025-08-26T00:00:00.000Z"
+          }
+        ],
+        "owner": "michael"
+      },
+      {
+        "id": "w2ne1bua",
+        "title": "Bayleaf Wellness: Revamp Google Ads Campaign",
+        "notes": "",
+        "category": "",
+        "priority": "medium",
+        "durationMin": 30,
+        "due": null,
+        "reminder": null,
+        "batchable": false,
+        "status": "pending",
+        "createdAt": "2025-08-19T05:43:51.825Z",
+        "scheduled": [
+          {
+            "start": "2025-08-20T23:00:00.000Z",
+            "end": "2025-08-20T23:30:00.000Z"
+          },
+          {
+            "start": "2025-08-26T00:00:00.000Z",
+            "end": "2025-08-26T00:30:00.000Z"
+          }
+        ],
+        "owner": "michael"
+      },
+      {
+        "id": "qhzn0in0",
+        "title": "Bayleaf Wellness: Fix Conversion Tracking",
+        "notes": "",
+        "category": "",
+        "priority": "medium",
+        "durationMin": 30,
+        "due": null,
+        "reminder": null,
+        "batchable": false,
+        "status": "pending",
+        "createdAt": "2025-08-19T05:43:51.826Z",
+        "scheduled": [
+          {
+            "start": "2025-08-20T23:30:00.000Z",
+            "end": "2025-08-21T00:00:00.000Z"
+          },
+          {
+            "start": "2025-08-26T00:30:00.000Z",
+            "end": "2025-08-26T01:00:00.000Z"
+          }
+        ],
+        "owner": "michael"
+      },
+      {
+        "id": "04lozw2e",
+        "title": "Wrap up any remaining website adjustments",
+        "notes": "",
+        "category": "",
+        "priority": "medium",
+        "durationMin": 30,
+        "due": null,
+        "reminder": null,
+        "batchable": false,
+        "status": "pending",
+        "createdAt": "2025-08-19T05:43:51.827Z",
+        "scheduled": [
+          {
+            "start": "2025-08-21T00:00:00.000Z",
+            "end": "2025-08-21T00:30:00.000Z"
+          },
+          {
+            "start": "2025-08-26T01:00:00.000Z",
+            "end": "2025-08-26T01:30:00.000Z"
+          }
+        ],
+        "owner": "michael"
+      },
+      {
+        "id": "96hww993",
+        "title": "Prepare notes for next week’s campaigns",
+        "notes": "",
+        "category": "",
+        "priority": "medium",
+        "durationMin": 30,
+        "due": null,
+        "reminder": null,
+        "batchable": false,
+        "status": "pending",
+        "createdAt": "2025-08-19T05:43:51.828Z",
+        "scheduled": [
+          {
+            "start": "2025-08-22T01:00:00.000Z",
+            "end": "2025-08-22T01:30:00.000Z"
+          },
+          {
+            "start": "2025-08-26T23:00:00.000Z",
+            "end": "2025-08-26T23:30:00.000Z"
+          }
+        ],
+        "owner": "michael"
+      },
+      {
+        "id": "bcxsdcf9",
+        "title": "ROC3 – Weekly rhythms:  CRM Review",
+        "notes": "",
+        "category": "",
+        "priority": "medium",
+        "durationMin": 30,
+        "due": null,
+        "reminder": null,
+        "batchable": false,
+        "status": "pending",
+        "createdAt": "2025-08-19T05:43:51.829Z",
+        "scheduled": [
+          {
+            "start": "2025-08-22T00:30:00.000Z",
+            "end": "2025-08-22T01:00:00.000Z"
+          },
+          {
+            "start": "2025-08-26T23:30:00.000Z",
+            "end": "2025-08-27T00:00:00.000Z"
+          }
+        ],
+        "owner": "michael"
+      },
+      {
+        "id": "wgeij1h0",
+        "title": "ROC1 – Investigate Facebook ad account ban + options",
+        "notes": "",
+        "category": "Goals",
+        "priority": "medium",
+        "durationMin": 60,
+        "due": null,
+        "reminder": null,
+        "batchable": false,
+        "status": "pending",
+        "createdAt": "2025-08-19T05:43:51.834Z",
+        "scheduled": [
+          {
+            "start": "2025-08-21T00:30:00.000Z",
+            "end": "2025-08-21T01:00:00.000Z"
+          },
+          {
+            "start": "2025-08-21T01:30:00.000Z",
+            "end": "2025-08-21T02:00:00.000Z"
+          },
+          {
+            "start": "2025-08-25T03:00:00.000Z",
+            "end": "2025-08-25T03:30:00.000Z"
+          },
+          {
+            "start": "2025-08-25T03:30:00.000Z",
+            "end": "2025-08-25T04:00:00.000Z"
+          }
+        ],
+        "owner": "michael"
+      },
+      {
+        "id": "33k3t1d4",
+        "title": "Random task 2",
+        "notes": "",
+        "category": "",
+        "priority": "medium",
+        "durationMin": 30,
+        "due": null,
+        "reminder": null,
+        "batchable": false,
+        "status": "completed",
+        "createdAt": "2025-08-19T05:59:56.620Z",
+        "scheduled": [
+          {
+            "start": "2025-08-22T00:00:00.000Z",
+            "end": "2025-08-22T00:30:00.000Z"
+          }
+        ],
+        "owner": "michael"
+      },
+      {
+        "id": "ijwxhv9r",
+        "title": "Morr:  Check Google Ads",
+        "notes": "",
+        "category": "",
+        "priority": "medium",
+        "durationMin": 30,
+        "due": null,
+        "reminder": null,
+        "batchable": false,
+        "status": "pending",
+        "createdAt": "2025-08-19T06:14:51.321Z",
+        "scheduled": [
+          {
+            "start": "2025-08-21T01:00:00.000Z",
+            "end": "2025-08-21T01:30:00.000Z"
+          },
+          {
+            "start": "2025-08-27T00:00:00.000Z",
+            "end": "2025-08-27T00:30:00.000Z"
+          }
+        ],
+        "owner": "michael"
+      },
+      {
+        "id": "b9q1ydo1",
+        "title": "ROC1 – Create & publish Content Piece #3",
+        "notes": "",
+        "category": "",
+        "priority": "medium",
+        "durationMin": 180,
+        "due": null,
+        "reminder": null,
+        "batchable": false,
+        "status": "pending",
+        "createdAt": "2025-08-19T06:14:51.325Z",
+        "scheduled": [
+          {
+            "start": "2025-08-20T02:00:00.000Z",
+            "end": "2025-08-20T02:30:00.000Z"
+          },
+          {
+            "start": "2025-08-20T02:30:00.000Z",
+            "end": "2025-08-20T03:00:00.000Z"
+          },
+          {
+            "start": "2025-08-20T03:00:00.000Z",
+            "end": "2025-08-20T03:30:00.000Z"
+          },
+          {
+            "start": "2025-08-20T03:30:00.000Z",
+            "end": "2025-08-20T04:00:00.000Z"
+          },
+          {
+            "start": "2025-08-20T04:00:00.000Z",
+            "end": "2025-08-20T04:30:00.000Z"
+          },
+          {
+            "start": "2025-08-20T04:30:00.000Z",
+            "end": "2025-08-20T05:00:00.000Z"
+          },
+          {
+            "start": "2025-08-25T00:00:00.000Z",
+            "end": "2025-08-25T00:30:00.000Z"
+          },
+          {
+            "start": "2025-08-25T00:30:00.000Z",
+            "end": "2025-08-25T01:00:00.000Z"
+          },
+          {
+            "start": "2025-08-25T01:00:00.000Z",
+            "end": "2025-08-25T01:30:00.000Z"
+          },
+          {
+            "start": "2025-08-25T01:30:00.000Z",
+            "end": "2025-08-25T02:00:00.000Z"
+          },
+          {
+            "start": "2025-08-25T02:00:00.000Z",
+            "end": "2025-08-25T02:30:00.000Z"
+          },
+          {
+            "start": "2025-08-25T02:30:00.000Z",
+            "end": "2025-08-25T03:00:00.000Z"
+          }
+        ],
+        "owner": "michael"
+      },
+      {
+        "id": "ni8ggg6m",
+        "title": "ROC3 – Weekly rhythms:  Xero",
+        "notes": "",
+        "category": "",
+        "priority": "medium",
+        "durationMin": 30,
+        "due": null,
+        "reminder": null,
+        "batchable": false,
+        "status": "pending",
+        "createdAt": "2025-08-19T06:14:51.329Z",
+        "scheduled": [
+          {
+            "start": "2025-08-27T00:30:00.000Z",
+            "end": "2025-08-27T01:00:00.000Z"
+          }
+        ],
+        "owner": "michael"
+      },
+      {
+        "id": "nyq3n1y8",
+        "title": "Harmony: Meeting Wrap 8/8/25 (due 22/8)",
+        "notes": "",
+        "category": "",
+        "priority": "medium",
+        "durationMin": 30,
+        "due": null,
+        "reminder": null,
+        "batchable": false,
+        "status": "pending",
+        "createdAt": "2025-08-19T06:16:39.312Z",
+        "scheduled": [
+          {
+            "start": "2025-08-20T00:30:00.000Z",
+            "end": "2025-08-20T01:00:00.000Z"
+          },
+          {
+            "start": "2025-08-27T01:00:00.000Z",
+            "end": "2025-08-27T01:30:00.000Z"
+          }
+        ],
+        "owner": "michael"
+      },
+      {
+        "id": "ijcs2300",
+        "title": "Pay Amex",
+        "notes": "",
+        "category": "",
+        "priority": "medium",
+        "durationMin": 30,
+        "due": null,
+        "reminder": null,
+        "batchable": false,
+        "status": "pending",
+        "createdAt": "2025-08-19T07:09:35.584Z",
+        "scheduled": [
+          {
+            "start": "2025-08-20T06:00:00.000Z",
+            "end": "2025-08-20T06:30:00.000Z"
+          }
+        ],
+        "owner": "michael"
+      },
+      {
+        "id": "3hmcqumw",
+        "title": "Pay Joan",
+        "notes": "",
+        "category": "",
+        "priority": "medium",
+        "durationMin": 30,
+        "due": null,
+        "reminder": null,
+        "batchable": false,
+        "status": "pending",
+        "createdAt": "2025-08-19T07:09:41.530Z",
+        "scheduled": [
+          {
+            "start": "2025-08-20T05:00:00.000Z",
+            "end": "2025-08-20T05:30:00.000Z"
+          }
+        ],
+        "owner": "michael"
+      },
+      {
+        "id": "kvid4607",
+        "title": "Pay Brett Turner",
+        "notes": "",
+        "category": "",
+        "priority": "medium",
+        "durationMin": 30,
+        "due": null,
+        "reminder": null,
+        "batchable": false,
+        "status": "pending",
+        "createdAt": "2025-08-19T07:09:57.509Z",
+        "scheduled": [
+          {
+            "start": "2025-08-20T05:30:00.000Z",
+            "end": "2025-08-20T06:00:00.000Z"
+          }
+        ],
+        "owner": "michael"
+      }
+    ],
+    "john": [
+      {
+        "id": "nr9065d8",
+        "title": "Testing",
+        "notes": "",
+        "category": "",
+        "priority": "medium",
+        "durationMin": 30,
+        "due": null,
+        "reminder": null,
+        "batchable": false,
+        "status": "pending",
+        "createdAt": "2025-08-19T07:38:43.732Z",
+        "scheduled": [
+          {
+            "start": "2025-08-18T23:00:00.000Z",
+            "end": "2025-08-18T23:30:00.000Z"
+          }
+        ],
+        "owner": "john"
+      }
+    ]
+  }
+}

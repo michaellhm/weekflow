@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en" data-theme="system">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WeekFlow v2 — Weekly Scheduling App</title>
+  <meta name="description" content="Responsive weekly scheduler with bulk input, OCR, auto‑scheduling, reminders, and offline persistence (localStorage)." />
+  <script defer src="https://unpkg.com/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <%- include('partials/header') %>
+
+  <main class="layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" role="complementary">
+      <nav class="tabs" role="tablist" aria-label="Sidebar Tabs">
+        <button class="active" data-tab="input" role="tab" aria-selected="true">Task Input</button>
+        <button data-tab="tasks" role="tab" aria-selected="false">Tasks</button>
+        <button data-tab="schedule" role="tab" aria-selected="false">Schedule</button>
+      </nav>
+
+      <!-- Task Input Tab -->
+      <section id="tab-input" class="tab active" role="tabpanel" aria-label="Task Input">
+        <div class="stack">
+          <details class="accordion" open>
+            <summary class="card-header"><span>Quick add</span><span class="chev">▾</span></summary>
+            <div class="card-body">
+              <form id="quickAddForm" class="stack">
+                <div><label for="qaTitle">Task</label><input id="qaTitle" class="input" placeholder="e.g. Review treatment plan for Michael" required /></div>
+                <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);gap:8px">
+                  <div><label for="qaDuration">Est. duration (min)</label><input id="qaDuration" class="input" type="number" min="5" step="5" placeholder="30" /></div>
+                  <div><label for="qaPriority">Priority</label><select id="qaPriority" class="input"><option value="medium">Medium</option><option value="high">High</option><option value="low">Low</option></select></div>
+                  <div><label for="qaCategory">Category</label><input id="qaCategory" class="input" placeholder="e.g. Admin" /></div>
+                </div>
+                <div class="btn-group"><button class="btn" type="submit" id="qaAddPending">Add task</button><button class="btn secondary" type="button" id="qaAddToday">Add today</button><button class="btn secondary" type="button" id="qaAddTomorrow">Add tomorrow</button></div>
+              </form>
+            </div>
+          </details>
+
+          <details class="accordion">
+            <summary class="card-header"><span>Bulk entry</span><span class="chev">▾</span></summary>
+            <div class="card-body">
+              <label for="bulkText">Paste or type multiple tasks (one per line). Hints like "(45m, high, due Thu)" are supported.</label>
+              <textarea id="bulkText" placeholder="e.g. Write patient reports (60m, high, due Wed)
+Order clinic supplies (30m, medium, due Fri)
+Follow-up call with Sarah (15m, medium, today 3pm)"></textarea>
+              <div class="btn-group" style="margin-top:10px"><button id="parseBtn" class="btn">Add tasks</button><button id="openClarify" class="btn secondary">Clarify tasks</button></div>
+            </div>
+          </details>
+
+          <details class="accordion">
+            <summary class="card-header"><span>Photo to tasks (OCR)</span><span class="chev">▾</span></summary>
+            <div class="card-body">
+              <input class="input" type="file" id="ocrFile" accept="image/*" />
+              <div id="ocrStatus" class="muted" style="margin-top:8px">Select a photo of handwritten notes or a printed list.</div>
+              <div id="ocrOut" class="ocr-preview" aria-live="polite"></div>
+              <div class="btn-group" style="margin-top:10px"><button id="ocrExtract" class="btn">Extract text</button><button id="ocrToBulk" class="btn secondary">Send to bulk input</button></div>
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <!-- Tasks Tab (original filters) -->
+      <section id="tab-tasks" class="tab" role="tabpanel" aria-label="Tasks">
+        <div class="stack">
+          <div class="card"><div class="card-header"><span>Search & filters</span></div>
+            <div class="card-body">
+              <div class="filters">
+                <input id="filterQuery" class="input" placeholder="Search text" />
+                <select id="filterStatus" class="input"><option value="all">All statuses</option><option value="pending">Pending</option><option value="waiting">Waiting</option><option value="completed">Completed</option></select>
+                <select id="filterPriority" class="input"><option value="all">All priorities</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select>
+              </div>
+              <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;margin-top:8px"><input id="filterFrom" class="input" type="date" /><input id="filterTo" class="input" type="date" /></div>
+            </div>
+          </div>
+          <div class="card"><div class="card-header"><span>Weekly task list</span> <button id="clearCompleted" class="btn secondary">Clear completed</button></div>
+            <div class="card-body"><ul id="taskList" class="task-list" aria-live="polite"></ul></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Schedule Tab -->
+      <section id="tab-schedule" class="tab" role="tabpanel" aria-label="Schedule">
+        <div class="stack">
+          <div class="card"><div class="card-header"><span>Default weekly hours</span></div>
+            <div class="card-body">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <div>
+                  <label>Working days</label>
+                  <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px">
+                    <label><input type="checkbox" class="workday" data-day="1" checked> Mon</label>
+                    <label><input type="checkbox" class="workday" data-day="2" checked> Tue</label>
+                    <label><input type="checkbox" class="workday" data-day="3" checked> Wed</label>
+                    <label><input type="checkbox" class="workday" data-day="4" checked> Thu</label>
+                    <label><input type="checkbox" class="workday" data-day="5" checked> Fri</label>
+                    <label><input type="checkbox" class="workday" data-day="6"> Sat</label>
+                    <label><input type="checkbox" class="workday" data-day="0"> Sun</label>
+                  </div>
+                </div>
+                <div>
+                  <label>Working hours</label>
+                  <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px"><input id="workStart" class="input" type="time" value="09:00" /><input id="workEnd" class="input" type="time" value="17:00" /></div>
+                </div>
+              </div>
+              <div class="btn-group" style="margin-top:10px"><button id="saveDefaults" class="btn">Save defaults</button><button id="runAutoSchedule" class="btn secondary">Auto‑schedule all pending</button></div>
+            </div>
+          </div>
+
+          <div class="card"><div class="card-header"><span>Current week overrides</span></div>
+            <div class="card-body">
+              <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);gap:8px;align-items:end">
+                <div><label for="ovrDay">Day</label><select id="ovrDay" class="input"></select></div>
+                <div><label>Block period</label><div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px"><input id="ovrStart" class="input" type="time" value="09:00" /><input id="ovrEnd" class="input" type="time" value="12:00" /></div></div>
+                <div class="btn-group"><button id="addOverride" class="btn">Add block</button><button id="blockAllDay" class="btn secondary" type="button">Block all day</button></div>
+              </div>
+              <div id="overrideList" class="task-list" style="margin-top:10px"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </aside>
+
+    <!-- Workspace: Calendar + views -->
+    <section class="workspace">
+      <div class="calendar-wrap">
+        <div class="calendar-toolbar">
+          <div class="btn-group"><button id="prevWeek" class="btn secondary">◀</button><button id="todayBtn" class="btn secondary">Today</button><button id="nextWeek" class="btn secondary">▶</button></div>
+          <div id="weekLabel" class="muted"></div>
+          <div class="btn-group"><button id="schedulePending" class="btn">Schedule tasks</button><button id="exportICS" class="btn ghost" title="Export scheduled blocks to .ics">Export .ics</button></div>
+        </div>
+
+        <nav class="subtabs" role="tablist" aria-label="Calendar views">
+          <button class="active" data-view="today" role="tab" aria-selected="true">Today</button>
+          <button data-view="upcoming" role="tab" aria-selected="false">Upcoming</button>
+          <button data-view="week" role="tab" aria-selected="false">Week</button>
+          <button data-view="alltasks" role="tab" aria-selected="false">All tasks</button>
+        </nav>
+
+        <section id="view-week" class="subview" role="tabpanel" aria-label="Week view">
+          <div id="calendar" class="calendar" role="grid" aria-label="Weekly calendar"></div>
+        </section>
+
+        <section id="view-today" class="subview active" role="tabpanel" aria-label="Today view">
+          <div class="card"><div class="card-header"><span>Today</span> <small class="muted" id="todayDate"></small></div>
+            <div class="card-body"><ul id="todayTasks" class="task-list"></ul></div>
+          </div>
+          <div class="card" style="margin-top:12px"><div class="card-header"><span>Waiting</span></div>
+            <div class="card-body"><ul id="waitingTasks" class="task-list"></ul></div>
+          </div>
+        </section>
+
+        <section id="view-upcoming" class="subview" role="tabpanel" aria-label="Upcoming view">
+          <div class="card"><div class="card-header"><span>Upcoming (this week)</span></div>
+            <div class="card-body" id="upcomingList"></div>
+          </div>
+        </section>
+
+        <section id="view-alltasks" class="subview" role="tabpanel" aria-label="All tasks view">
+          <div class="card"><div class="card-header"><span>Search & filters</span></div>
+            <div class="card-body">
+              <div class="filters">
+                <input id="filterQuery2" class="input" placeholder="Search text" />
+                <select id="filterStatus2" class="input"><option value="all">All statuses</option><option value="scheduled">Scheduled</option><option value="pending">Pending</option><option value="waiting">Waiting</option><option value="completed">Completed</option></select>
+                <select id="filterPriority2" class="input"><option value="all">All priorities</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select>
+              </div>
+              <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;margin-top:8px"><input id="filterFrom2" class="input" type="date" /><input id="filterTo2" class="input" type="date" /></div>
+            </div>
+          </div>
+          <div class="card"><div class="card-header"><span>All tasks</span> <button id="clearCompleted2" class="btn secondary">Clear completed</button></div>
+            <div class="card-body"><ul id="taskList2" class="task-list"></ul></div>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <%- include('partials/footer') %>
+
+  <script defer src="/js/app.js"></script>
+</body>
+</html>
+
+

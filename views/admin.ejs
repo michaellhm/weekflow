@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en" data-theme="system">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin — WeekFlow</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <%- include('partials/header') %>
+  <main class="layout">
+    <section class="workspace" style="grid-column:1 / -1">
+      <div class="card">
+        <div class="card-header"><span>Users</span></div>
+        <div class="card-body">
+          <form id="newUserForm" class="stack" style="margin-bottom:12px">
+            <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);gap:8px">
+              <input id="nuName" class="input" placeholder="username" required />
+              <input id="nuPass" class="input" type="password" placeholder="password" required />
+              <select id="nuRole" class="input"><option value="user">User</option><option value="admin">Admin</option></select>
+            </div>
+            <div class="btn-group"><button class="btn" type="submit">Add user</button></div>
+          </form>
+          <table style="width:100%;border-collapse:collapse">
+            <thead><tr><th style="text-align:left;padding:6px">Username</th><th style="text-align:left;padding:6px">Role</th><th style="padding:6px">Actions</th></tr></thead>
+            <tbody id="userRows"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+  <script>
+    async function loadUsers(){ const res=await fetch('/api/users'); const users=await res.json(); const tbody=document.getElementById('userRows'); tbody.innerHTML=''; users.forEach(u=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td style="padding:6px">${u.username}</td><td style="padding:6px">${u.role}</td><td style="padding:6px"><button data-edit="${u.username}" class="btn secondary">Edit</button> <button data-del="${u.username}" class="btn secondary">Delete</button></td>`; tbody.appendChild(tr) }); }
+    loadUsers();
+    document.getElementById('newUserForm').addEventListener('submit',async(e)=>{e.preventDefault(); const body={username:document.getElementById('nuName').value.trim(), password:document.getElementById('nuPass').value, role:document.getElementById('nuRole').value}; const r=await fetch('/api/users',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)}); if(r.ok){ e.target.reset(); loadUsers() } else { alert('Failed') } });
+    document.getElementById('userRows').addEventListener('click',async(e)=>{ if(e.target.dataset.del){ if(confirm('Delete user? This removes their tasks.')){ const r=await fetch('/api/users/'+e.target.dataset.del,{method:'DELETE'}); if(r.ok) loadUsers(); else alert('Failed') } } if(e.target.dataset.edit){ const un=e.target.dataset.edit; const pass=prompt('New password (leave blank to keep)'); const role=prompt('Role (admin/user, blank to keep)'); const body={}; if(pass) body.password=pass; if(role) body.role=role; const r=await fetch('/api/users/'+un,{method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)}); if(r.ok) loadUsers(); else alert('Failed') } });
+  </script>
+</body>
+</html>
+
+

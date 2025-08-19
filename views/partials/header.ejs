@@ -1,0 +1,16 @@
+<header class="appbar" role="banner">
+  <div class="brand" aria-label="WeekFlow brand"><div class="logo" aria-hidden="true"></div><h1>WeekFlow</h1></div>
+  <div class="actions">
+    <% if (user && user.role==='admin') { %>
+      <a href="/admin" class="icon-btn" title="Admin">🛠️</a>
+    <% } %>
+    <button id="themeToggle" class="icon-btn" title="Toggle theme" aria-pressed="false">🌗</button>
+    <button id="exportBtn" class="icon-btn" title="Export tasks JSON">⤴️</button>
+    <button id="importBtn" class="icon-btn" title="Import tasks JSON">⤵️</button>
+    <% if (user) { %>
+      <form action="/api/logout" method="post" style="display:inline"><button class="icon-btn" title="Logout">🚪</button></form>
+    <% } %>
+  </div>
+</header>
+
+

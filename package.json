@@ -1,0 +1,16 @@
+{
+  "name": "weekflow-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "WeekFlow local server to persist tasks/settings to JSON",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "ejs": "^3.1.10",
+    "express": "^4.19.2",
+    "express-session": "^1.18.2"
+  }
+}

@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="en" data-theme="system">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WeekFlow v2 — Weekly Scheduling App</title>
+  <meta name="description" content="Responsive weekly scheduler with bulk input, OCR, auto‑scheduling, reminders, and offline persistence (localStorage)." />
+  <script defer src="https://unpkg.com/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;line-height:1.5;-webkit-font-smoothing:antialiased}
+    img,svg,video,canvas{display:block;max-width:100%}
+    input,button,textarea,select{font:inherit}
+    :root{--bg:#f7f7fb;--surface:#ffffff;--surface-2:#f0f1f6;--text:#0f1222;--text-muted:#6b7280;--border:#e5e7eb;--primary:#4f46e5;--primary-600:#4338ca;--accent:#06b6d4;--success:#10b981;--warning:#f59e0b;--danger:#ef4444;--shadow:0 10px 30px rgba(17,24,39,.08);--radius:16px;--radius-sm:12px}
+    @media (prefers-color-scheme: dark){:root{--bg:#0b0e16;--surface:#0f1422;--surface-2:#0b1020;--text:#e5e7eb;--text-muted:#9aa1b2;--border:#1f2840;--shadow:0 10px 30px rgba(0,0,0,.4)}}
+    [data-theme="dark"]:root{--bg:#0b0e16;--surface:#0f1422;--surface-2:#0b1020;--text:#e5e7eb;--text-muted:#9aa1b2;--border:#1f2840;--shadow:0 10px 30px rgba(0,0,0,.4)}
+    body{background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Inter,Arial}
+
+    /* LAYOUT */
+    header.appbar{position:sticky;top:0;z-index:50;background:linear-gradient(180deg,rgba(0,0,0,.06),transparent),var(--surface);backdrop-filter:blur(6px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:12px clamp(12px,2.5vw,24px)}
+    .brand{display:flex;gap:12px;align-items:center}.logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--primary),var(--accent));box-shadow:var(--shadow)}
+    .brand h1{font-size:18px;margin:0;letter-spacing:.2px}.actions{display:flex;gap:8px;align-items:center}
+    .icon-btn{display:inline-grid;place-items:center;width:36px;height:36px;border-radius:12px;border:1px solid var(--border);background:var(--surface);cursor:pointer;transition:.2s transform,.2s background}.icon-btn:hover{transform:translateY(-1px);background:var(--surface-2)}
+    main.layout{display:grid;grid-template-columns:520px 1fr;gap:18px;padding:18px}
+    aside.sidebar{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);display:flex;flex-direction:column;min-height:calc(100vh - 120px)}
+    section.workspace{display:grid;grid-template-rows:auto 1fr;gap:12px}
+
+    /* Sidebar tabs */
+    .tabs{display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:1px solid var(--border)}
+    .tabs button{padding:12px;border:0;background:transparent;cursor:pointer;font-weight:600;color:var(--text-muted);border-bottom:2px solid transparent}
+    .tabs button.active{color:var(--text);border-bottom-color:var(--primary)}
+    .tab{display:none;padding:16px}.tab.active{display:block}
+
+    /* Workspace sub‑tabs */
+    .subtabs{display:flex;gap:8px;border-bottom:1px solid var(--border);padding:0 4px}
+    .subtabs button{padding:10px 12px;margin:6px 0;border:0;background:transparent;cursor:pointer;color:var(--text-muted);border-bottom:2px solid transparent;border-radius:10px 10px 0 0}
+    .subtabs button.active{color:var(--text);border-bottom-color:var(--primary)}
+    .subview{display:none;margin-top:8px}.subview.active{display:block}
+
+    /* Cards */
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+    .card-header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border)}
+    .card-body{padding:14px 16px}
+
+    /* Inputs */
+    .input,textarea,select{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--surface-2);color:var(--text)}
+    textarea{min-height:140px;resize:vertical}
+    label{font-size:12px;color:var(--text-muted);display:block;margin:6px 2px}
+    .btn{display:inline-flex;gap:8px;align-items:center;border:0;background:var(--primary);color:#fff;padding:10px 14px;border-radius:12px;cursor:pointer;box-shadow:var(--shadow);transition:.2s transform,.2s filter}
+    .btn:hover{transform:translateY(-1px);filter:saturate(1.1)}
+    .btn.secondary{background:var(--surface-2);color:var(--text);border:1px solid var(--border)}
+    .btn.ghost{background:transparent;border:1px dashed var(--border);color:var(--text-muted)}
+    .btn-group{display:flex;gap:8px;flex-wrap:wrap}
+
+    .stack{display:grid;gap:12px}
+    .ocr-preview{font-family:ui-monospace,Menlo,Consolas,monospace;background:var(--surface-2);padding:10px;border-radius:12px;min-height:62px}
+
+    /* Calendar */
+    .calendar-wrap{display:grid;gap:12px;width:100%}
+    .calendar-toolbar{display:flex;justify-content:space-between;align-items:center}
+    .calendar{display:grid;grid-template-columns:52px repeat(7,1fr);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+    .cal-head{display:contents}
+    .cal-time-head{background:var(--surface-2);border-right:1px solid var(--border);padding:8px;font-size:12px;color:var(--text-muted)}
+    .cal-day-head{background:var(--surface-2);border-right:1px solid var(--border);padding:8px;text-align:center;font-weight:700}
+    .cal-body{display:contents}
+    .time-col{background:var(--surface-2);border-right:1px solid var(--border)}
+    .time-slot{height:40px;border-bottom:1px dashed var(--border);font-size:10px;color:var(--text-muted);display:flex;align-items:flex-start;justify-content:flex-end;padding:4px}
+    .day-col{position:relative;border-right:1px solid var(--border);background:linear-gradient(180deg,transparent 39px,var(--surface-2) 40px) repeat-y;background-size:100% 40px}
+    .day-col:last-child,.cal-day-head:last-child{border-right:0}
+    .block{position:absolute;left:6px;right:6px;border-radius:10px;padding:8px 10px;font-size:12px;color:#fff;box-shadow:var(--shadow);cursor:grab;user-select:none}
+    .block.low{background:linear-gradient(135deg,#14b8a6,#10b981)}
+    .block.medium{background:linear-gradient(135deg,#3b82f6,#6366f1)}
+    .block.high{background:linear-gradient(135deg,#f97316,#ef4444)}
+
+    /* Tasks */
+    .task-list{display:grid;gap:8px}
+    .task{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;padding:10px;border:1px solid var(--border);border-radius:12px;background:var(--surface)}
+    .task.dragging{opacity:.6}
+    .badge{font-size:11px;border-radius:999px;padding:2px 8px;border:1px solid var(--border)}
+    .badge.low{background:#0d948816;color:#0ea5e9}
+    .badge.medium{background:#4338ca16;color:#6366f1}
+    .badge.high{background:#b91c1c16;color:#ef4444}
+    .muted{color:var(--text-muted)}
+
+    /* Completed task visual state */
+    .task.completed strong,.task.completed .muted{text-decoration:line-through}
+    .task.completed{opacity:.85}
+
+    .filters{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);gap:8px}
+
+    .toast{position:fixed;inset:auto 16px 16px auto;z-index:100;background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);padding:12px 14px;transform:translateY(20px);opacity:0;pointer-events:none;transition:.3s}
+    .toast.show{transform:translateY(0);opacity:1}
+
+    dialog.modal{border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);background:var(--surface);color:var(--text);padding:0;max-width:520px;width:clamp(320px,58vw,520px)}
+    .modal header{padding:14px 16px;border-bottom:1px solid var(--border);font-weight:700}
+    .modal .content{padding:14px 16px}
+    .modal footer{padding:14px 16px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
+
+    @media (max-width:1080px){main.layout{grid-template-columns:1fr}aside.sidebar{min-height:auto}}
+    @media (max-width:640px){.filters{grid-template-columns:1fr 1fr}.tabs{grid-template-columns:1fr 1fr 1fr}}
+
+    /* Sidebar fit rules: prevent horizontal overflow and clipping */
+    aside.sidebar .tab, aside.sidebar .stack, aside.sidebar .card, aside.sidebar .card-body, aside.sidebar .tabs, aside.sidebar .tabs button {min-width:0}
+    aside.sidebar .card{width:100%}
+
+    /* --- Fix: sidebar overlap & content creep into calendar --- */
+main.layout {
+  /* Keep the left column fixed; allow the right pane to shrink properly */
+  grid-template-columns: 520px minmax(0, 1fr);
+}
+
+/* Let the right-hand workspace actually shrink within its grid cell */
+section.workspace {
+  min-width: 0;
+  position: relative;
+  z-index: 1;       /* paint above the sidebar if they ever stack */
+}
+
+/* Keep the sidebar content inside its own column */
+aside.sidebar {
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+  z-index: 0;
+}
+
+/* Ensure calendar content sits above any neighboring elements */
+.calendar-wrap {
+  position: relative;
+  z-index: 1;
+}
+  </style>
+</head>
+<body>
+  <header class="appbar" role="banner">
+    <div class="brand" aria-label="WeekFlow brand"><div class="logo" aria-hidden="true"></div><h1>WeekFlow</h1></div>
+    <div class="actions">
+      <button id="themeToggle" class="icon-btn" title="Toggle theme" aria-pressed="false">🌗</button>
+      <button id="exportBtn" class="icon-btn" title="Export tasks JSON">⤴️</button>
+      <button id="importBtn" class="icon-btn" title="Import tasks JSON">⤵️</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" role="complementary">
+      <nav class="tabs" role="tablist" aria-label="Sidebar Tabs">
+        <button class="active" data-tab="input" role="tab" aria-selected="true">Task Input</button>
+        <button data-tab="tasks" role="tab" aria-selected="false">Tasks</button>
+        <button data-tab="schedule" role="tab" aria-selected="false">Schedule</button>
+      </nav>
+
+      <!-- Task Input Tab -->
+      <section id="tab-input" class="tab active" role="tabpanel" aria-label="Task Input">
+        <div class="stack">
+          <div class="card"><div class="card-header"><span>Bulk entry</span></div>
+            <div class="card-body">
+              <label for="bulkText">Paste or type multiple tasks (one per line). Hints like "(45m, high, due Thu)" are supported.</label>
+              <textarea id="bulkText" placeholder="e.g. Write patient reports (60m, high, due Wed)\nOrder clinic supplies (30m, medium, due Fri)\nFollow-up call with Sarah (15m, medium, today 3pm)"></textarea>
+              <div class="btn-group" style="margin-top:10px"><button id="parseBtn" class="btn">Parse & classify</button><button id="openClarify" class="btn secondary">Clarify tasks</button></div>
+            </div>
+          </div>
+
+          <div class="card"><div class="card-header"><span>Photo to tasks (OCR)</span></div>
+            <div class="card-body">
+              <input class="input" type="file" id="ocrFile" accept="image/*" />
+              <div id="ocrStatus" class="muted" style="margin-top:8px">Select a photo of handwritten notes or a printed list.</div>
+              <div id="ocrOut" class="ocr-preview" aria-live="polite"></div>
+              <div class="btn-group" style="margin-top:10px"><button id="ocrExtract" class="btn">Extract text</button><button id="ocrToBulk" class="btn secondary">Send to bulk input</button></div>
+            </div>
+          </div>
+
+          <div class="card"><div class="card-header"><span>Quick add</span></div>
+            <div class="card-body">
+              <form id="quickAddForm" class="stack">
+                <div><label for="qaTitle">Task</label><input id="qaTitle" class="input" placeholder="e.g. Review treatment plan for Michael" required /></div>
+                <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);gap:8px">
+                  <div><label for="qaDuration">Est. duration (min)</label><input id="qaDuration" class="input" type="number" min="5" step="5" placeholder="30" /></div>
+                  <div><label for="qaPriority">Priority</label><select id="qaPriority" class="input"><option value="medium">Medium</option><option value="high">High</option><option value="low">Low</option></select></div>
+                  <div><label for="qaCategory">Category</label><input id="qaCategory" class="input" placeholder="e.g. Admin" /></div>
+                </div>
+                <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px">
+                  <div><label for="qaDue">Due date/time</label><input id="qaDue" class="input" type="datetime-local" /></div>
+                  <div><label for="qaReminder">Reminder</label><input id="qaReminder" class="input" type="datetime-local" /></div>
+                </div>
+                <div class="btn-group"><button class="btn" type="submit">Add task</button><button class="btn secondary" type="button" id="qaScheduleBtn">Add & auto‑schedule</button></div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tasks Tab (original filters) -->
+      <section id="tab-tasks" class="tab" role="tabpanel" aria-label="Tasks">
+        <div class="stack">
+          <div class="card"><div class="card-header"><span>Search & filters</span></div>
+            <div class="card-body">
+              <div class="filters">
+                <input id="filterQuery" class="input" placeholder="Search text" />
+                <select id="filterStatus" class="input"><option value="all">All statuses</option><option value="pending">Pending</option><option value="completed">Completed</option></select>
+                <select id="filterPriority" class="input"><option value="all">All priorities</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select>
+              </div>
+              <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;margin-top:8px"><input id="filterFrom" class="input" type="date" /><input id="filterTo" class="input" type="date" /></div>
+            </div>
+          </div>
+          <div class="card"><div class="card-header"><span>Weekly task list</span> <button id="clearCompleted" class="btn secondary">Clear completed</button></div>
+            <div class="card-body"><ul id="taskList" class="task-list" aria-live="polite"></ul></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Schedule Tab -->
+      <section id="tab-schedule" class="tab" role="tabpanel" aria-label="Schedule">
+        <div class="stack">
+          <div class="card"><div class="card-header"><span>Default weekly hours</span></div>
+            <div class="card-body">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <div>
+                  <label>Working days</label>
+                  <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px">
+                    <label><input type="checkbox" class="workday" data-day="1" checked> Mon</label>
+                    <label><input type="checkbox" class="workday" data-day="2" checked> Tue</label>
+                    <label><input type="checkbox" class="workday" data-day="3" checked> Wed</label>
+                    <label><input type="checkbox" class="workday" data-day="4" checked> Thu</label>
+                    <label><input type="checkbox" class="workday" data-day="5" checked> Fri</label>
+                    <label><input type="checkbox" class="workday" data-day="6"> Sat</label>
+                    <label><input type="checkbox" class="workday" data-day="0"> Sun</label>
+                  </div>
+                </div>
+                <div>
+                  <label>Working hours</label>
+                  <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px"><input id="workStart" class="input" type="time" value="09:00" /><input id="workEnd" class="input" type="time" value="17:00" /></div>
+                </div>
+              </div>
+              <div class="btn-group" style="margin-top:10px"><button id="saveDefaults" class="btn">Save defaults</button><button id="runAutoSchedule" class="btn secondary">Auto‑schedule all pending</button></div>
+            </div>
+          </div>
+
+          <div class="card"><div class="card-header"><span>Current week overrides</span></div>
+            <div class="card-body">
+              <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);gap:8px;align-items:end">
+                <div><label for="ovrDay">Day</label><select id="ovrDay" class="input"></select></div>
+                <div><label>Block period</label><div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px"><input id="ovrStart" class="input" type="time" value="09:00" /><input id="ovrEnd" class="input" type="time" value="12:00" /></div></div>
+                <div class="btn-group"><button id="addOverride" class="btn">Add block</button><button id="blockAllDay" class="btn secondary" type="button">Block all day</button></div>
+              </div>
+              <div id="overrideList" class="task-list" style="margin-top:10px"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </aside>
+
+    <!-- Workspace: Calendar + views -->
+    <section class="workspace">
+      <div class="calendar-wrap">
+        <div class="calendar-toolbar">
+          <div class="btn-group"><button id="prevWeek" class="btn secondary">◀</button><button id="todayBtn" class="btn secondary">Today</button><button id="nextWeek" class="btn secondary">▶</button></div>
+          <div id="weekLabel" class="muted"></div>
+          <div class="btn-group"><button id="schedulePending" class="btn">Schedule tasks</button><button id="exportICS" class="btn ghost" title="Export scheduled blocks to .ics">Export .ics</button></div>
+        </div>
+
+        <nav class="subtabs" role="tablist" aria-label="Calendar views">
+          <button class="active" data-view="today" role="tab" aria-selected="true">Today</button>
+          <button data-view="upcoming" role="tab" aria-selected="false">Upcoming</button>
+          <button data-view="week" role="tab" aria-selected="false">Week</button>
+          <button data-view="alltasks" role="tab" aria-selected="false">All tasks</button>
+        </nav>
+
+        <section id="view-week" class="subview" role="tabpanel" aria-label="Week view">
+          <div id="calendar" class="calendar" role="grid" aria-label="Weekly calendar"></div>
+        </section>
+
+        <section id="view-today" class="subview active" role="tabpanel" aria-label="Today view">
+          <div class="card"><div class="card-header"><span>Today</span> <small class="muted" id="todayDate"></small></div>
+            <div class="card-body"><ul id="todayTasks" class="task-list"></ul></div>
+          </div>
+        </section>
+
+        <section id="view-upcoming" class="subview" role="tabpanel" aria-label="Upcoming view">
+          <div class="card"><div class="card-header"><span>Upcoming (this week)</span></div>
+            <div class="card-body" id="upcomingList"></div>
+          </div>
+        </section>
+
+        <section id="view-alltasks" class="subview" role="tabpanel" aria-label="All tasks view">
+          <div class="card"><div class="card-header"><span>Search & filters</span></div>
+            <div class="card-body">
+              <div class="filters">
+                <input id="filterQuery2" class="input" placeholder="Search text" />
+                <select id="filterStatus2" class="input"><option value="all">All statuses</option><option value="scheduled">Scheduled</option><option value="pending">Pending</option><option value="completed">Completed</option></select>
+                <select id="filterPriority2" class="input"><option value="all">All priorities</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px"><input id="filterFrom2" class="input" type="date" /><input id="filterTo2" class="input" type="date" /></div>
+            </div>
+          </div>
+          <div class="card"><div class="card-header"><span>All tasks</span> <button id="clearCompleted2" class="btn secondary">Clear completed</button></div>
+            <div class="card-body"><ul id="taskList2" class="task-list"></ul></div>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <!-- Clarify & Edit dialogs and toast -->
+  <dialog id="clarifyDialog" class="modal"><form method="dialog"><header>Clarify task</header><div class="content"><div id="clarifyPrompt" style="margin-bottom:10px"></div><div id="clarifyControls"></div><div id="clarifyProgress" class="muted" style="margin-top:8px"></div></div><footer><button class="btn secondary" value="cancel">Cancel</button><button id="clarifyNext" class="btn" value="ok">Next</button></footer></form></dialog>
+  <dialog id="editDialog" class="modal"><form method="dialog"><header>Edit task</header><div class="content"><input type="hidden" id="editId" /><label for="editTitle">Title</label><input id="editTitle" class="input" /><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px"><div><label for="editDuration">Duration (min)</label><input id="editDuration" class="input" type="number" min="5" step="5" /></div><div><label for="editPriority">Priority</label><select id="editPriority" class="input"><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select></div><div><label for="editCategory">Category</label><input id="editCategory" class="input" /></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px"><div><label for="editDue">Due</label><input id="editDue" type="datetime-local" class="input" /></div><div><label for="editReminder">Reminder</label><input id="editReminder" type="datetime-local" class="input" /></div></div><div style="margin-top:8px"><label><input id="editBatchable" type="checkbox" /> Batchable</label></div></div><footer><button class="btn secondary" value="cancel">Cancel</button><button id="editSave" class="btn" value="ok">Save</button></footer></form></dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script>
+  const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+  const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
+  const fmtTime=d=>d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+  const fmtDate=d=>d.toLocaleDateString([], {weekday:'short', month:'short', day:'numeric'});
+  const startOfWeek=date=>{const d=new Date(date);const day=(d.getDay()+6)%7;d.setHours(0,0,0,0);d.setDate(d.getDate()-day);return d};
+  const addMinutes=(d,m)=>new Date(d.getTime()+m*60000);
+  const iso=d=>new Date(d).toISOString(); const fromIso=s=>s?new Date(s):null;
+
+  const store={
+    get(k,f){
+      try{ return JSON.parse(localStorage.getItem(k)) ?? f }catch{ return f }
+    },
+    set(k,v){
+      try{ localStorage.setItem(k, JSON.stringify(v)) }catch{}
+      if(k==='wf_settings'){
+        fetch('/api/settings', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(v)}).catch(()=>{});
+      }
+    }
+  };
+
+  const state={
+    tasks: store.get('wf_tasks', []),
+    settings: store.get('wf_settings', {workDays:[1,2,3,4,5],workStart:'09:00',workEnd:'17:00',theme:'system',overrides:{},dayOrders:{}}),
+    weekStart: startOfWeek(new Date()), clarifyQueue: [], notifications:{}
+  };
+
+  function applyTheme(t){document.documentElement.setAttribute('data-theme', t==='system' ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark':'light') : t); state.settings.theme=t; store.set('wf_settings',state.settings); $('#themeToggle').setAttribute('aria-pressed', t==='dark')}
+  $('#themeToggle').addEventListener('click', ()=>{const c=state.settings.theme; const n=c==='dark'?'light':c==='light'?'system':'dark'; applyTheme(n)}); applyTheme(state.settings.theme||'system');
+
+  $$('.tabs button').forEach(btn=> btn.addEventListener('click', ()=>{$$('.tabs button').forEach(b=>{b.classList.remove('active'); b.setAttribute('aria-selected','false')}); btn.classList.add('active'); btn.setAttribute('aria-selected','true'); $$('.tab').forEach(t=> t.classList.remove('active')); $('#tab-'+btn.dataset.tab).classList.add('active')}));
+
+  // OCR
+  let ocrImageFile=null; $('#ocrFile').addEventListener('change',e=>{ocrImageFile=e.target.files[0]; $('#ocrStatus').textContent=ocrImageFile?`Selected: ${ocrImageFile.name}`:'No file selected'});
+  $('#ocrExtract').addEventListener('click', async()=>{ if(!ocrImageFile){$('#ocrStatus').textContent='Please choose an image first.'; return} $('#ocrStatus').textContent='Running OCR…'; try{const {data}=await Tesseract.recognize(ocrImageFile,'eng',{logger:m=>$('#ocrStatus').textContent=`${m.status} ${(m.progress*100|0)}%`}); $('#ocrOut').textContent=(data.text||'').trim(); $('#ocrStatus').textContent='Done.'}catch(err){$('#ocrStatus').textContent='OCR failed: '+err.message}});
+  $('#ocrToBulk').addEventListener('click',()=>{const t=$('#ocrOut').textContent.trim(); if(t){ $('#bulkText').value=( $('#bulkText').value? $('#bulkText').value+'\n':'')+t } });
+
+  function saveTasks(){
+    store.set('wf_tasks', state.tasks);
+    fetch('/api/tasks', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({tasks: state.tasks})}).catch(()=>{});
+  }
+  async function loadFromServer(){
+    try{
+      const [tr,sr]=await Promise.all([
+        fetch('/api/tasks').then(r=> r.ok? r.json(): Promise.resolve(null)).catch(()=>null),
+        fetch('/api/settings').then(r=> r.ok? r.json(): Promise.resolve(null)).catch(()=>null)
+      ]);
+      if(Array.isArray(tr)){
+        state.tasks=tr; localStorage.setItem('wf_tasks', JSON.stringify(tr));
+      }
+      if(sr && typeof sr==='object'){
+        state.settings=sr; localStorage.setItem('wf_settings', JSON.stringify(sr));
+      }
+    }catch{}
+  }
+  function uid(){return Math.random().toString(36).slice(2,10)}
+  function addTask(o){const t={id:uid(), title:o.title?.trim()||'Untitled', notes:o.notes||'', category:o.category||'', priority:o.priority||'medium', durationMin:clamp(parseInt(o.durationMin)||30,5,8*60), due:o.due?iso(o.due):o.due||null, reminder:o.reminder?iso(o.reminder):o.reminder||null, batchable:!!o.batchable, status:'pending', createdAt:iso(new Date()), scheduled:[]}; state.tasks.push(t); saveTasks(); scheduleReminders(); renderAll(); return t}
+  function updateTask(id,patch){const i=state.tasks.findIndex(t=>t.id===id); if(i<0) return; Object.assign(state.tasks[i],patch); saveTasks(); renderAll()}
+  function deleteTask(id){state.tasks=state.tasks.filter(t=>t.id!==id); saveTasks(); renderAll()}
+
+  async function ensurePermission(){if(!('Notification'in window)) return false; if(Notification.permission==='granted') return true; if(Notification.permission!=='denied'){const p=await Notification.requestPermission(); return p==='granted'} return false}
+  function scheduleReminders(){Object.values(state.notifications).forEach(clearTimeout); state.notifications={}; const now=Date.now(); for(const t of state.tasks){ if(t.status==='completed'||!t.reminder) continue; const at=new Date(t.reminder).getTime(); if(at>now){const ms=at-now; const id=setTimeout(()=>{ensurePermission().then(ok=>{if(ok) new Notification('Reminder',{body:t.title}); else alert('Reminder: '+t.title)})},ms); state.notifications[t.id]=id } } }
+
+  function parseLine(line){const res={title:line, priority:'medium', durationMin:30, due:null, category:'', batchable:false}; const m=line.match(/^(.*?)\s*\((.*?)\)\s*$/); if(m){res.title=m[1].trim(); const parts=m[2].split(/,|;/).map(s=>s.trim().toLowerCase()); for(const p of parts){ if(/^(\d+)\s*m(in)?$/.test(p)) res.durationMin=parseInt(RegExp.$1); else if(/^(\d+)\s*h(our)?$/.test(p)) res.durationMin=parseInt(RegExp.$1)*60; else if(/high|urgent|asap/.test(p)) res.priority='high'; else if(/low/.test(p)) res.priority='low'; else if(/medium|med/.test(p)) res.priority='medium'; else if(/^due\b/.test(p)) res.due=new Date(p.replace(/^due\s*/,'')); else if(/batch/.test(p)) res.batchable=true; else if(/cat[:=]/.test(p)) res.category=p.replace(/cat[:=]\s*/,'') } } else { if(/urgent|asap|!/.test(line)) res.priority='high'; if(/call|email/.test(line)) res.durationMin=15; if(/report|write|draft/i.test(line)) res.durationMin=60 } return res}
+  function classifyHeuristic(lines){return lines.filter(Boolean).map(s=>parseLine(s.trim())).filter(t=>t.title)}
+
+  const clarifyDialog=$('#clarifyDialog'); let currentClarify=null; function startClarify(tasks){state.clarifyQueue=tasks.map((t,i)=>({idx:i,task:t,step:0})); nextClarify()} function nextClarify(){if(state.clarifyQueue.length===0){clarifyDialog.close(); renderAll(); return} currentClarify=state.clarifyQueue.shift(); showClarifyStep()} function showClarifyStep(){if(!currentClarify){clarifyDialog.close(); return} const {task,step}=currentClarify; $('#clarifyProgress').textContent=`Task ${currentClarify.idx+1} of ${state.clarifyTotal||1}`; let prompt='',controls=''; if(step===0 && !task.durationMin){prompt=`How long will “${task.title}” take?`; controls=`<input id="clarDur" class="input" type="number" min="5" step="5" placeholder="30" />`} else if((step===0&&task.durationMin)||step===1){prompt=`Priority for “${task.title}”?`; controls=`<div class="btn-group"><button data-p="high" class="btn">High</button><button data-p="medium" class="btn secondary">Medium</button><button data-p="low" class="btn secondary">Low</button></div>`} else if(step===2){prompt=`Due date/time for “${task.title}” (optional)`; controls=`<input id="clarDue" class="input" type="datetime-local" />`} else if(step===3){prompt=`Batch with similar tasks?`; controls=`<div class="btn-group"><button data-b="yes" class="btn">Yes</button><button data-b="no" class="btn secondary">No</button></div>`} else {addTask(task); nextClarify(); return} $('#clarifyPrompt').textContent=prompt; $('#clarifyControls').innerHTML=controls; if(!clarifyDialog.open){clarifyDialog.showModal()}}
+  $('#clarifyControls').addEventListener('click',e=>{const {task}=currentClarify||{}; if(!task) return; if(e.target.matches('button[data-p]')){task.priority=e.target.dataset.p; currentClarify.step=2; showClarifyStep()} if(e.target.matches('button[data-b]')){task.batchable=e.target.dataset.b==='yes'; currentClarify.step=4; showClarifyStep()}});
+  $('#clarifyNext').addEventListener('click',e=>{e.preventDefault(); if(!currentClarify) return; const {task,step}=currentClarify; if(step===0 && $('#clarDur')){const v=parseInt($('#clarDur').value); if(v>0) task.durationMin=v; currentClarify.step=1; showClarifyStep(); return} if(step===2 && $('#clarDue')){const v=$('#clarDue').value; task.due=v?new Date(v):null; currentClarify.step=3; showClarifyStep(); return}});
+  $('#openClarify').addEventListener('click',()=>{const lines=$('#bulkText').value.split(/\n|\r/).map(s=>s.trim()).filter(Boolean); if(!lines.length){showToast('Nothing to clarify. Add some tasks first.'); return} const tasks=classifyHeuristic(lines); state.clarifyTotal=tasks.length; startClarify(tasks)});
+
+  $('#parseBtn').addEventListener('click',()=>{const bulk=$('#bulkText'); const lines=bulk.value.split(/\n|\r/).map(s=>s.trim()).filter(Boolean); if(!lines.length){showToast('Paste or type some tasks first.'); bulk.focus(); return} const tasks=classifyHeuristic(lines); tasks.forEach(t=>addTask(t)); showToast(`Added ${tasks.length} task${tasks.length!==1?'s':''} to pending.`); bulk.value=''; bulk.focus()});
+  $('#quickAddForm').addEventListener('submit',e=>{e.preventDefault(); const t=addTask({title:$('#qaTitle').value, durationMin:parseInt($('#qaDuration').value)||30, priority:$('#qaPriority').value, category:$('#qaCategory').value, due:$('#qaDue').value? new Date($('#qaDue').value): null, reminder:$('#qaReminder').value? new Date($('#qaReminder').value): null}); e.target.reset(); showToast('Task added.')});
+  $('#qaScheduleBtn').addEventListener('click',()=>{$('#quickAddForm').dispatchEvent(new Event('submit',{cancelable:true})); autoSchedule()});
+
+  ;['filterQuery','filterStatus','filterPriority','filterFrom','filterTo'].forEach(id=>{$('#'+id).addEventListener('input',renderTaskList); $('#'+id).addEventListener('change',renderTaskList)});
+  $('#clearCompleted').addEventListener('click',()=>{const before=state.tasks.length; state.tasks=state.tasks.filter(t=>t.status!=='completed'); saveTasks(); renderAll(); showToast(`Cleared ${before-state.tasks.length} completed tasks.`)})
+
+  ;['filterQuery2','filterStatus2','filterPriority2','filterFrom2','filterTo2'].forEach(id=>{$('#'+id).addEventListener('input',renderAllTasksView); $('#'+id).addEventListener('change',renderAllTasksView)});
+  $('#clearCompleted2').addEventListener('click',()=>{const before=state.tasks.length; state.tasks=state.tasks.filter(t=>t.status!=='completed'); saveTasks(); renderAll(); showToast(`Cleared ${before-state.tasks.length} completed tasks.`)})
+
+  function matchesFilters(t){const q=$('#filterQuery').value.toLowerCase(); const st=$('#filterStatus').value; const pr=$('#filterPriority').value; const from=$('#filterFrom').value?new Date($('#filterFrom').value):null; const to=$('#filterTo').value?new Date($('#filterTo').value):null; if(q && !(t.title.toLowerCase().includes(q)||(t.category||'').toLowerCase().includes(q))) return false; if(st!=='all' && t.status!==st) return false; if(pr!=='all' && t.priority!==pr) return false; if(from && t.due && new Date(t.due) < from) return false; if(to && t.due && new Date(t.due) > addMinutes(new Date(to),24*60)) return false; return true}
+  function matchesFilters2(t){const q=$('#filterQuery2').value.toLowerCase(); const st=$('#filterStatus2').value; const pr=$('#filterPriority2').value; const from=$('#filterFrom2').value?new Date($('#filterFrom2').value):null; const to=$('#filterTo2').value?new Date($('#filterTo2').value):null; if(q && !(t.title.toLowerCase().includes(q)||(t.category||'').toLowerCase().includes(q))) return false; if(st==='scheduled' && !(t.scheduled&&t.scheduled.length)) return false; if(st==='pending' && (t.status!=='pending' || (t.scheduled&&t.scheduled.length))) return false; if(st==='completed' && t.status!=='completed') return false; if(pr!=='all' && t.priority!==pr) return false; if(from && t.due && new Date(t.due) < from) return false; if(to && t.due && new Date(t.due) > addMinutes(new Date(to),24*60)) return false; return true}
+
+  function taskItem(t,opts={}){const li=document.createElement('li'); li.className='task'+(t.status==='completed'?' completed':''); li.setAttribute('draggable','true'); li.dataset.id=t.id; const contextBtns=[]; if(opts.context==='today') contextBtns.push('<button class="icon-btn" title="Push to next week" data-act="nextweek">↪️</button>'); if(opts.context==='all') contextBtns.push('<button class="icon-btn" title="Schedule this task" data-act="schedule">🗓️</button>'); li.innerHTML=`
+      <input type="checkbox" ${t.status==='completed'?'checked':''} aria-label="Complete task" />
+      <div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <strong>${t.title.replace(/</g,'&lt;')}</strong>
+          <span class="badge ${t.priority}">${t.priority}</span>
+          ${t.category? `<span class="badge">${t.category}</span>`:''}
+          ${t.due? `<span class="muted">Due ${fmtDate(new Date(t.due))} ${fmtTime(new Date(t.due))}</span>`:''}
+          <span class="muted">${t.durationMin}m</span>
+        </div>
+        ${t.notes? `<div class="muted" style="font-size:12px">${t.notes.replace(/</g,'&lt;')}</div>`:''}
+      </div>
+      <div class="btn-group">
+        ${contextBtns.join('')}
+        <button class="icon-btn" title="Edit">✏️</button>
+        <button class="icon-btn" title="Delete">🗑️</button>
+      </div>`;
+    li.querySelector('input[type=checkbox]').addEventListener('change',e=>{updateTask(t.id,{status:e.target.checked?'completed':'pending'}); if(e.target.checked) motivate()});
+    li.querySelector('[title=Delete]').addEventListener('click',()=>{if(confirm('Delete this task?')) deleteTask(t.id)});
+    li.querySelector('[title=Edit]').addEventListener('click',()=>openEdit(t));
+    if(li.querySelector('[data-act="nextweek"]')) li.querySelector('[data-act="nextweek"]').addEventListener('click',()=>pushToNextWeek(t.id));
+    if(li.querySelector('[data-act="schedule"]')) li.querySelector('[data-act="schedule"]').addEventListener('click',()=>autoScheduleSingle(t.id));
+    li.addEventListener('dragstart',e=>{li.classList.add('dragging'); e.dataTransfer.setData('text/plain',t.id)});
+    li.addEventListener('dragend',()=>li.classList.remove('dragging'));
+    return li}
+
+  const editDialog=$('#editDialog'); function openEdit(t){$('#editId').value=t.id; $('#editTitle').value=t.title; $('#editDuration').value=t.durationMin; $('#editPriority').value=t.priority; $('#editCategory').value=t.category||''; $('#editDue').value=t.due? new Date(t.due).toISOString().slice(0,16):''; $('#editReminder').value=t.reminder? new Date(t.reminder).toISOString().slice(0,16):''; $('#editBatchable').checked=!!t.batchable; editDialog.showModal()}
+  $('#editSave').addEventListener('click',e=>{e.preventDefault(); const id=$('#editId').value; updateTask(id,{title:$('#editTitle').value, durationMin:parseInt($('#editDuration').value)||30, priority:$('#editPriority').value, category:$('#editCategory').value, due:$('#editDue').value? new Date($('#editDue').value).toISOString():null, reminder:$('#editReminder').value? new Date($('#editReminder').value).toISOString():null, batchable:$('#editBatchable').checked}); editDialog.close(); scheduleReminders()});
+
+  function weekKey(d){const y=d.getFullYear(); const temp=new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); const dayNum=temp.getUTCDay()||7; temp.setUTCDate(temp.getUTCDate()+4-dayNum); const yearStart=new Date(Date.UTC(temp.getUTCFullYear(),0,1)); const weekNo=Math.ceil((((temp-yearStart)/86400000)+1)/7); return `${y}-W${String(weekNo).padStart(2,'0')}`}
+
+  function renderWeekView(){const cal=$('#calendar'); cal.innerHTML=''; const ws=state.weekStart; const wk=weekKey(ws); $('#weekLabel').textContent=`${fmtDate(ws)} – ${fmtDate(addMinutes(ws,6*24*60))} (Week ${wk.split('-W')[1]})`; const head=document.createElement('div'); head.className='cal-head'; head.innerHTML=`<div class="cal-time-head"></div>`+Array.from({length:7}).map((_,i)=>{const d=addMinutes(ws,i*24*60); const isToday=new Date().toDateString()===d.toDateString(); return `<div class="cal-day-head" aria-label="${d.toDateString()}" style="${isToday?'color:var(--primary)':''}">${d.toLocaleDateString([], {weekday:'short'})}<br><small class="muted">${d.getDate()}/${d.getMonth()+1}</small></div>`}).join(''); cal.appendChild(head); const body=document.createElement('div'); body.className='cal-body'; const [hs,ms]=state.settings.workStart.split(':').map(Number); const [he,me]=state.settings.workEnd.split(':').map(Number); const dayStart=hs*60+ms, dayEnd=he*60+me; const timeCol=document.createElement('div'); timeCol.className='time-col'; for(let m=dayStart;m<dayEnd;m+=30){const t=new Date(ws); t.setHours(0,m,0,0); const slot=document.createElement('div'); slot.className='time-slot'; slot.textContent=(m%60===0? fmtTime(t): '\u00A0'); timeCol.appendChild(slot)} body.appendChild(timeCol); for(let i=0;i<7;i++){const day=addMinutes(ws,i*24*60); const dayCol=document.createElement('div'); dayCol.className='day-col'; dayCol.dataset.dayIndex=((day.getDay()+6)%7)+1; const blocks=computeScheduledBlocksForDay(day); for(const b of blocks){const top=((b.startMin - dayStart)/(dayEnd-dayStart))*((dayEnd-dayStart)/30*40); const height=(b.durationMin/30)*40-4; const div=document.createElement('div'); div.className=`block ${b.priority}`; div.style.top=`${Math.max(2,top)}px`; div.style.height=`${Math.max(24,height)}px`; div.textContent=`${b.title} (${b.durationMin}m)`; div.title=`${b.title} \n${fmtTime(b.start)}–${fmtTime(b.end)} (${b.priority})`; dayCol.appendChild(div)} body.appendChild(dayCol)} cal.appendChild(body)}
+  function computeScheduledBlocksForDay(day){const dayStr=day.toDateString(); const blocks=[]; for(const t of state.tasks){for(const s of (t.scheduled||[])){const st=new Date(s.start); if(st.toDateString()===dayStr){blocks.push({title:t.title, priority:t.priority, durationMin:(new Date(s.end)-st)/60000, start:st, end:new Date(s.end), startMin:st.getHours()*60+st.getMinutes(), id:t.id})}}} blocks.sort((a,b)=>a.start-b.start); return blocks}
+
+  function setCalView(v){$$('.subtabs button').forEach(b=>{b.classList.toggle('active', b.dataset.view===v); b.setAttribute('aria-selected', String(b.dataset.view===v))}); $$('.subview').forEach(s=> s.classList.remove('active')); $('#view-'+v).classList.add('active'); if(v==='week') renderWeekView(); if(v==='today') renderTodayView(); if(v==='upcoming') renderUpcomingView(); if(v==='alltasks') renderAllTasksView()}
+  $$('.subtabs button').forEach(btn=> btn.addEventListener('click', ()=> setCalView(btn.dataset.view)));
+
+  function renderCalendar(){ if($('#view-week').classList.contains('active')) renderWeekView() }
+
+  function renderTodayView(){const today=new Date(); today.setHours(0,0,0,0); $('#todayDate').textContent=today.toDateString(); let todayTasks=state.tasks.filter(t=> t.scheduled?.some(s=> new Date(s.start).toDateString()===today.toDateString()) || (t.due && new Date(t.due).toDateString()===today.toDateString())); const key=today.toISOString().slice(0,10); const order=(state.settings.dayOrders||{})[key]||[]; if(order.length){todayTasks.sort((a,b)=> order.indexOf(a.id)-order.indexOf(b.id))} else {todayTasks.sort((a,b)=>{const aFirst=a.scheduled?.find(s=> new Date(s.start).toDateString()===today.toDateString()); const bFirst=b.scheduled?.find(s=> new Date(s.start).toDateString()===today.toDateString()); return (aFirst? new Date(aFirst.start): new Date(a.due||today)).getTime() - (bFirst? new Date(bFirst.start): new Date(b.due||today)).getTime()})} const ul=$('#todayTasks'); ul.innerHTML=''; todayTasks.forEach(t=> ul.appendChild(taskItem(t,{context:'today'}))); ul.addEventListener('dragover',e=>{e.preventDefault(); const dragging=$('.task.dragging'); if(!dragging) return; const after=Array.from(ul.querySelectorAll('.task:not(.dragging)')).find(el=>{const r=el.getBoundingClientRect(); return e.clientY <= r.top + r.height/2}); if(after) ul.insertBefore(dragging,after); else ul.appendChild(dragging)}); ul.addEventListener('drop',()=>{const ids=$$('#todayTasks .task').map(el=>el.dataset.id); state.settings.dayOrders=state.settings.dayOrders||{}; state.settings.dayOrders[key]=ids; store.set('wf_settings',state.settings)})}
+
+  function renderUpcomingView(){const container=$('#upcomingList'); container.innerHTML=''; const ws=state.weekStart; const today=new Date(); today.setHours(0,0,0,0); const daySections=[]; for(let i=0;i<7;i++){const d=addMinutes(ws,i*24*60); if(d<today) continue; const dayStr=d.toDateString(); const dayTasks=state.tasks.filter(t=> t.scheduled?.some(s=> new Date(s.start).toDateString()===dayStr)); const sec=document.createElement('section'); sec.className='stack'; sec.innerHTML=`<strong>${fmtDate(d)}</strong>`; const list=document.createElement('ul'); list.className='task-list'; list.dataset.day=dayStr; list.addEventListener('dragover',e=>{e.preventDefault(); const dragging=$('.task.dragging'); if(!dragging) return; const after=Array.from(list.querySelectorAll('.task:not(.dragging)')).find(el=>{const r=el.getBoundingClientRect(); return e.clientY <= r.top + r.height/2}); if(after) list.insertBefore(dragging,after); else list.appendChild(dragging)}); list.addEventListener('drop',e=>{e.preventDefault(); const taskId=e.dataTransfer.getData('text/plain'); if(!taskId) return; moveTaskToDay(taskId, new Date(list.dataset.day));}); if(dayTasks.length){dayTasks.forEach(t=> list.appendChild(taskItem(t)))} else {list.innerHTML='<div class=\"muted\">No tasks scheduled.</div>'} sec.appendChild(list); container.appendChild(sec); daySections.push({day:dayStr, list})}}
+
+  function moveTaskToDay(taskId, day){const t=state.tasks.find(x=>x.id===taskId); if(!t) return; const [hs,ms]=state.settings.workStart.split(':').map(Number); const [he,me]=state.settings.workEnd.split(':').map(Number); const dayStartMin=(hs||9)*60+(ms||0); const dayEndMin=(he||17)*60+(me||0); const ws=state.weekStart; const wsStart=ws.getTime(); const wsEnd=addMinutes(ws,7*24*60).getTime(); t.scheduled=(t.scheduled||[]).filter(s=>{const st=new Date(s.start).getTime(); return st<wsStart || st>=wsEnd}); const occupied=computeScheduledBlocksForDay(day).map(x=>({s:x.startMin,e:x.startMin+x.durationMin})); let remaining=t.durationMin||30; let cursor=dayStartMin; while(cursor+30<=dayEndMin && remaining>0){const next=cursor+30; const overlaps=occupied.some(o=> !(next<=o.s || cursor>=o.e)); if(!overlaps){const start=new Date(day); start.setHours(0,cursor,0,0); const end=new Date(day); end.setHours(0,next,0,0); t.scheduled.push({start:iso(start), end:iso(end)}); occupied.push({s:cursor,e:next}); remaining-=30;} cursor=next} saveTasks(); renderAll()}
+
+  function renderAllTasksView(){const list=$('#taskList2'); list.innerHTML=''; const tasks=state.tasks.filter(matchesFilters2); tasks.sort((a,b)=> a.status===b.status ? 0 : a.status==='pending' ? -1:1); tasks.forEach(t=> list.appendChild(taskItem(t,{context:'all'}))); list.addEventListener('dragover',e=>{e.preventDefault(); const dragging=$('.task.dragging'); if(!dragging) return; const after=Array.from(list.querySelectorAll('.task:not(.dragging)')).find(el=>{const r=el.getBoundingClientRect(); return e.clientY <= r.top + r.height/2}); if(after) list.insertBefore(dragging,after); else list.appendChild(dragging)}); list.addEventListener('drop',()=>{const ids=$$('#taskList2 .task').map(el=>el.dataset.id); state.tasks.sort((a,b)=> ids.indexOf(a.id)-ids.indexOf(b.id)); saveTasks()})}
+
+  function getAvailabilityForWeek(ws){const wk=weekKey(ws); const ovr=state.settings.overrides[wk]||{}; const [hs,ms]=state.settings.workStart.split(':').map(Number); const [he,me]=state.settings.workEnd.split(':').map(Number); const baseStart=hs*60+ms, baseEnd=he*60+me; const days=Array.from({length:7}).map((_,i)=>{const dow=(i+1); if(!state.settings.workDays.includes(i===6?0:(i+1))) return []; let blocks=[{s:baseStart,e:baseEnd}]; const dOvr=ovr[dow]; if(dOvr){ if(dOvr.allDay) return []; for(const blk of dOvr.blocks||[]){const bs=toMin(blk.s), be=toMin(blk.e); blocks=subtractBlock(blocks,{s:bs,e:be}) } } return mergeBlocks(blocks)}); return days; function toMin(t){const [h,m]=t.split(':').map(Number); return h*60+m} function subtractBlock(avail,block){const out=[]; for(const a of avail){if(block.e<=a.s || block.s>=a.e){out.push(a); continue} if(block.s>a.s) out.push({s:a.s,e:block.s}); if(block.e<a.e) out.push({s:block.e,e:a.e})} return out} function mergeBlocks(blks){blks.sort((a,b)=>a.s-b.s); const out=[]; for(const b of blks){if(!out.length || b.s>out.at(-1).e) out.push({...b}); else out.at(-1).e=Math.max(out.at(-1).e,b.e)} return out}}
+
+  function buildPerDayTaskSets(ws){const sets=Array.from({length:7},()=> new Set()); for(let i=0;i<7;i++){const d=addMinutes(ws,i*24*60); const dayStr=d.toDateString(); for(const t of state.tasks){if((t.scheduled||[]).some(s=> new Date(s.start).toDateString()===dayStr)) sets[i].add(t.id)}} return sets}
+  function autoSchedule(){let ws=state.weekStart; const today=new Date(); const todayStart=new Date(today.getFullYear(),today.getMonth(),today.getDate()); const wsEnd=addMinutes(ws,7*24*60); if(todayStart>=ws && todayStart<wsEnd){ ws = ws } else { ws = state.weekStart } const startDayOffset=Math.max(0, Math.floor((todayStart - ws)/ (24*60*60*1000))); const avail=getAvailabilityForWeek(ws); const perDaySets=buildPerDayTaskSets(ws); const candidates=state.tasks.filter(t=> t.status==='pending'); candidates.sort((a,b)=>{const ad=a.due?new Date(a.due).getTime():Infinity; const bd=b.due?new Date(b.due).getTime():Infinity; if(ad!==bd) return ad-bd; const pr={high:0,medium:1,low:2}; if(pr[a.priority]!==pr[b.priority]) return pr[a.priority]-pr[b.priority]; return (b.durationMin||0)-(a.durationMin||0)}); const weekStartMs=ws.getTime(); const weekEndMs=addMinutes(ws,7*24*60).getTime(); for(const t of candidates){ t.scheduled=(t.scheduled||[]).filter(s=>{const st=new Date(s.start).getTime(); return st<weekStartMs || st>=weekEndMs}) } for(const t of candidates){ scheduleTaskInWeek(t,avail,ws,perDaySets,startDayOffset) } saveTasks(); renderAll(); showToast('Auto‑scheduling complete.')}
+  function autoScheduleSingle(id){const t=state.tasks.find(x=>x.id===id); if(!t) return; const ws=state.weekStart; const avail=getAvailabilityForWeek(ws); const perDaySets=buildPerDayTaskSets(ws); const today=new Date(); const todayStart=new Date(today.getFullYear(),today.getMonth(),today.getDate()); const startDayOffset=Math.max(0, Math.floor((todayStart - ws)/ (24*60*60*1000))); scheduleTaskInWeek(t,avail,ws,perDaySets,startDayOffset); saveTasks(); renderAll(); showToast('Task scheduled.')}
+  function scheduleTaskInWeek(t,avail,ws,perDaySets,startDayOffset=0){
+    let remaining=t.durationMin||30; let placed=false;
+    const weekStartMs=ws.getTime(); const weekEndMs=addMinutes(ws,7*24*60).getTime();
+    t.scheduled=(t.scheduled||[]).filter(s=>{const st=new Date(s.start).getTime(); return st<weekStartMs || st>=weekEndMs});
+    for(let d=startDayOffset; d<7 && remaining>0; d++){
+      const dayDate=addMinutes(ws,d*24*60);
+      const blocks=avail[d]; if(!blocks||!blocks.length) continue;
+      const occupied=computeScheduledBlocksForDay(dayDate).map(x=>({s:x.startMin,e:x.startMin+x.durationMin}));
+      const set=perDaySets? perDaySets[d]: null;
+      for(const b of blocks){
+        let cursor=b.s;
+        while(cursor+30<=b.e && remaining>0){
+          const next=cursor+30;
+          const overlaps=occupied.some(o=> !(next<=o.s || cursor>=o.e));
+          const alreadyCounted = !!(set && set.has(t.id));
+          const firstSlotToday = !(t.scheduled||[]).some(s=> new Date(s.start).toDateString()===dayDate.toDateString());
+          const canStartNewTaskToday = set ? set.size < 5 : true;
+          const dayHasCapacity = alreadyCounted || (firstSlotToday ? canStartNewTaskToday : true);
+          if(!overlaps && dayHasCapacity){
+            const start=new Date(dayDate); start.setHours(0,cursor,0,0);
+            const end=new Date(dayDate); end.setHours(0,next,0,0);
+            t.scheduled=t.scheduled||[]; t.scheduled.push({start:iso(start), end:iso(end)});
+            remaining-=30; placed=true; occupied.push({s:cursor,e:next});
+            if(set && firstSlotToday){ set.add(t.id) }
+          }
+          cursor=next
+        }
+        if(remaining<=0) break
+      }
+    }
+    if(!placed){ /* couldn't schedule this week */ }
+  }
+  function pushToNextWeek(id){const t=state.tasks.find(x=>x.id===id); if(!t) return; const ws=state.weekStart; const weekStartMs=ws.getTime(); const weekEndMs=addMinutes(ws,7*24*60).getTime(); t.scheduled=(t.scheduled||[]).filter(s=>{const st=new Date(s.start).getTime(); return st<weekStartMs || st>=weekEndMs}); t.status='pending'; saveTasks(); renderAll(); showToast('Moved to pending for next week.')}
+  $('#schedulePending').addEventListener('click', autoSchedule);
+
+  function renderOverrides(){const ws=state.weekStart; const wk=weekKey(ws); const ovr=state.settings.overrides[wk]||{}; const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat']; const sel=$('#ovrDay'); sel.innerHTML=''; for(let i=0;i<7;i++){const d=addMinutes(ws,i*24*60); const value=((d.getDay()+6)%7)+1; const opt=document.createElement('option'); opt.value=value; opt.textContent=`${days[d.getDay()]} ${d.getDate()}/${d.getMonth()+1}`; sel.appendChild(opt)} const list=$('#overrideList'); list.innerHTML=''; Object.entries(ovr).forEach(([dayIdx,conf])=>{const div=document.createElement('div'); div.className='task'; div.innerHTML=`<div><strong>Day ${dayIdx}</strong> ${conf.allDay? '<span class="badge high">All day blocked</span>' : ''} ${!conf.allDay && conf.blocks?.length? '<div class="muted">'+conf.blocks.map(b=>`${b.s}–${b.e}`).join(', ')+'</div>':''}</div><div class="btn-group"><button class="icon-btn" data-day="${dayIdx}">🗑️</button></div>`; div.querySelector('button').addEventListener('click',()=>{delete ovr[dayIdx]; state.settings.overrides[wk]=ovr; store.set('wf_settings',state.settings); renderOverrides(); renderCalendar()}); list.appendChild(div)})}
+  $('#addOverride').addEventListener('click',()=>{const wk=weekKey(state.weekStart); const day=$('#ovrDay').value; const s=$('#ovrStart').value; const e=$('#ovrEnd').value; const ovr=state.settings.overrides[wk]||{}; ovr[day]=ovr[day]||{allDay:false, blocks:[]}; ovr[day].blocks.push({s,e}); state.settings.overrides[wk]=ovr; store.set('wf_settings',state.settings); renderOverrides(); renderCalendar()});
+  $('#blockAllDay').addEventListener('click',()=>{const wk=weekKey(state.weekStart); const day=$('#ovrDay').value; const ovr=state.settings.overrides[wk]||{}; ovr[day]={allDay:true, blocks:[]}; state.settings.overrides[wk]=ovr; store.set('wf_settings',state.settings); renderOverrides(); renderCalendar()});
+  $('#saveDefaults').addEventListener('click',()=>{const workDays=$$('.workday:checked').map(cb=> parseInt(cb.dataset.day)); state.settings.workDays=workDays; state.settings.workStart=$('#workStart').value; state.settings.workEnd=$('#workEnd').value; store.set('wf_settings',state.settings); renderCalendar(); showToast('Defaults saved.')});
+
+  function jumpWeeks(delta){state.weekStart=addMinutes(state.weekStart, delta*7*24*60); renderAll()}
+  $('#prevWeek').addEventListener('click',()=>jumpWeeks(-1)); $('#nextWeek').addEventListener('click',()=>jumpWeeks(+1)); $('#todayBtn').addEventListener('click',()=>{state.weekStart=startOfWeek(new Date()); renderAll()});
+
+  function renderTaskList(){const list=$('#taskList'); list.innerHTML=''; const tasks=state.tasks.filter(matchesFilters); tasks.sort((a,b)=> a.status===b.status ? 0 : a.status==='pending' ? -1:1); tasks.forEach(t=> list.appendChild(taskItem(t))); list.addEventListener('dragover',e=>{e.preventDefault(); const dragging=$('.task.dragging'); if(!dragging) return; const after=Array.from(list.querySelectorAll('.task:not(.dragging)')).find(el=>{const r=el.getBoundingClientRect(); return e.clientY <= r.top + r.height/2}); if(after) list.insertBefore(dragging,after); else list.appendChild(dragging)}); list.addEventListener('drop',()=>{const ids=$$('#taskList .task').map(el=>el.dataset.id); state.tasks.sort((a,b)=> ids.indexOf(a.id)-ids.indexOf(b.id)); saveTasks()})}
+
+  const messages=['Nice! Progress compounds. 💪','One step closer — keep going! ✨','Great work — momentum looks good. 🚀','Done and dusted. Onwards! ✅','You’re doing brilliantly. 🙌']; function motivate(){showToast(messages[(Math.random()*messages.length)|0])} function showToast(msg){const t=$('#toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=> t.classList.remove('show'), 2400)}
+
+  $('#exportBtn').addEventListener('click',()=>{const blob=new Blob([JSON.stringify({tasks:state.tasks, settings:state.settings}, null, 2)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='weekflow-export.json'; a.click(); URL.revokeObjectURL(url)});
+  $('#importBtn').addEventListener('click',()=>{const inp=document.createElement('input'); inp.type='file'; inp.accept='application/json'; inp.onchange=()=>{const f=inp.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{try{const data=JSON.parse(r.result); if(data.tasks) state.tasks=data.tasks; if(data.settings) state.settings=data.settings; saveTasks(); store.set('wf_settings',state.settings); renderAll(); showToast('Imported.')}catch{alert('Invalid JSON')}}; r.readAsText(f)}; inp.click()});
+
+  $('#exportICS').addEventListener('click',()=>{const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//WeekFlow//EN']; for(const t of state.tasks){for(const s of (t.scheduled||[])){lines.push('BEGIN:VEVENT'); lines.push('UID:'+t.id+'-'+s.start); lines.push('DTSTAMP:'+ new Date().toISOString().replace(/[-:]/g,'').split('.')[0]+'Z'); lines.push('SUMMARY:'+ t.title.replace(/,/g,'\\,')); lines.push('DTSTART:'+ new Date(s.start).toISOString().replace(/[-:]/g,'').split('.')[0]+'Z'); lines.push('DTEND:'+ new Date(s.end).toISOString().replace(/[-:]/g,'').split('.')[0]+'Z'); lines.push('END:VEVENT')}} lines.push('END:VCALENDAR'); const blob=new Blob([lines.join('\n')],{type:'text/calendar'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='weekflow.ics'; a.click(); URL.revokeObjectURL(url)});
+
+  function renderAll(){renderTaskList(); renderOverrides(); renderCalendar(); renderTodayView(); renderUpcomingView(); renderAllTasksView()}
+
+  (async function init(){
+    await loadFromServer();
+    if(!state.tasks.length){addTask({title:'Plan week', durationMin:30, priority:'high', category:'Planning'}); addTask({title:'Write 2 progress notes', durationMin:60, priority:'medium', category:'Admin', batchable:true})}
+    $$('.workday').forEach(cb=>{cb.checked=state.settings.workDays.includes(parseInt(cb.dataset.day))});
+    $('#workStart').value=state.settings.workStart||'09:00';
+    $('#workEnd').value=state.settings.workEnd||'17:00';
+    scheduleReminders();
+    renderAll();
+    setCalView('today')
+  })();
+  </script>
+</body>
+</html>

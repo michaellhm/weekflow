@@ -1,0 +1,14 @@
+{
+  "workDays": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "workStart": "09:00",
+  "workEnd": "17:00",
+  "theme": "dark",
+  "overrides": {},
+  "dayOrders": {}
+}

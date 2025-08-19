@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Login — WeekFlow</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <div style="max-width:420px;margin:10vh auto;background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);padding:20px">
+    <h2 style="margin:0 0 12px 0">Login</h2>
+    <% if (typeof error !== 'undefined') { %>
+      <div class="badge high" style="display:inline-block"> <%= error %> </div>
+    <% } %>
+    <form action="/api/login" method="post" class="stack" style="margin-top:12px">
+      <div>
+        <label>Username</label>
+        <input class="input" name="username" required />
+      </div>
+      <div>
+        <label>Password</label>
+        <input class="input" type="password" name="password" required />
+      </div>
+      <button class="btn" type="submit">Sign in</button>
+    </form>
+  </div>
+</body>
+</html>
+
+
